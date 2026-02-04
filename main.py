@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from app.routers.group import room_router
+from app.routers.room import room_router
 
 app = FastAPI()
 
