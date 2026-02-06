@@ -9,4 +9,4 @@ from app.models.base import Base
 class Room(Base, IdMixin):
     __tablename__ = 'rooms'
 
-    title: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(100), unique=True)
