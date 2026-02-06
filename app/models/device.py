@@ -19,7 +19,7 @@ class Device(Base, UUIDMixin, ModifiedTimeMixin):
     group_id: Mapped[int] = mapped_column(ForeignKey("groups.id"))
     group: Mapped["Group"] = relationship(back_populates="devices")
     properties: Mapped[dict | None] = mapped_column(JSON)
-    notes: Mapped[Text | None]
+    notes: Mapped[str | None] = mapped_column(Text)
     
     
     
