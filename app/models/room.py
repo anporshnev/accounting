@@ -3,7 +3,6 @@ from sqlalchemy import String
 
 from app.mixins.id_mixins import IdMixin
 from app.models.base import Base
-from app.models.device  import Device
 
 
 

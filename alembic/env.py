@@ -14,6 +14,8 @@ sys.path.append(os.path.join(sys.path[0], 'app'))
 
 from app.config import settings
 from app.models.base import Base
+from app.models.device import Device
+from app.models.group import Group
 from app.models.room import Room
 
 # this is the Alembic Config object, which provides

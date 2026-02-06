@@ -4,8 +4,7 @@ from sqlalchemy import ForeignKey, JSON, Text
 from app.mixins.id_mixins import UUIDMixin
 from app.mixins.modified_time_mixins import ModifiedTimeMixin
 from app.models.base import Base
-from app.models.room import Room
-from app.models.group import Group
+
 
 
 class Device(Base, UUIDMixin, ModifiedTimeMixin):
