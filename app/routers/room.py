@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 
 from app.schemas.room import RoomFromDB, RoomCreate
@@ -20,8 +21,15 @@ async def get_room(sesssion: AsyncSession = Depends(get_session)):
 async def add_room(room: RoomCreate, sesssion: AsyncSession = Depends(get_session)):
     new_room = Room(**room.model_dump())
     sesssion.add(new_room)
-    await sesssion.commit()
+    try:
+        await sesssion.commit()
+    except SQLAlchemyError as e:
+        await sesssion.rollback()
+        raise e
 
 @room_router.delete("/{room_id}")
-async def delete_room(sesssion: AsyncSession = Depends(get_session)):
-    pass
+async def delete_room(room_id: int, sesssion: AsyncSession = Depends(get_session)):
+    room = await sesssion.get(Room, room_id)
+    if room:
+        await sesssion.delete(room)
+        await sesssion.commit()
