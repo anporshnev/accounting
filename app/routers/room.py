@@ -23,9 +23,22 @@ async def add_room(room: RoomCreate, sesssion: AsyncSession = Depends(get_sessio
     sesssion.add(new_room)
     try:
         await sesssion.commit()
+    except SQLAlchemyError:
+        await sesssion.rollback()
+        raise 
+    
+@room_router.put("/{room_id}")
+async def update_room(room_id: int, room: RoomCreate, sesssion: AsyncSession = Depends(get_session)):
+    record = await sesssion.get(Room, room_id)
+    try:
+        if record:
+            record.title = room.title
+            await sesssion.commit()
+        return None
     except SQLAlchemyError as e:
         await sesssion.rollback()
-        raise e
+        raise
+    
 
 @room_router.delete("/{room_id}")
 async def delete_room(room_id: int, sesssion: AsyncSession = Depends(get_session)):
