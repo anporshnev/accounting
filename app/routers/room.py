@@ -8,12 +8,12 @@ from app.models.room import Room
 from app.database import get_session
 
 room_router: APIRouter = APIRouter(
-    prefix="/rooms",
+    prefix="/room",
     tags=["Room"]
 )
 
 @room_router.get("/", response_model=list[RoomFromDB])
-async def get_room(sesssion: AsyncSession = Depends(get_session)):
+async def get_rooms(sesssion: AsyncSession = Depends(get_session)):
     result = await sesssion.execute(select(Room))
     return result.scalars().all()
 
@@ -35,7 +35,7 @@ async def update_room(room_id: int, room: RoomCreate, sesssion: AsyncSession = D
             record.title = room.title
             await sesssion.commit()
         return None
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         await sesssion.rollback()
         raise
     
