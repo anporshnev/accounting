@@ -8,8 +8,8 @@ from app.models.group import Group
 from app.database import get_session
 
 group_router: APIRouter = APIRouter(
-    prefix="/group",
-    tags=["Group"]
+    prefix="/groups",
+    tags=["Groups"]
 )
 
 @group_router.get("/", response_model=list[GroupFromDB])

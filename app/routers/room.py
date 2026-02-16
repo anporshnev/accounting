@@ -8,7 +8,7 @@ from app.models.room import Room
 from app.database import get_session
 
 room_router: APIRouter = APIRouter(
-    prefix="/room",
+    prefix="/rooms",
     tags=["Room"]
 )
 
