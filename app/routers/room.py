@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
@@ -51,6 +51,12 @@ async def update_room(room_id: int, room: RoomCreate, sesssion: AsyncSession = D
 @room_router.delete("/{room_id}")
 async def delete_room(room_id: int, sesssion: AsyncSession = Depends(get_session)):
     room = await sesssion.get(Room, room_id)
+    query = select(Device).filter(Device.room_id == room_id)
+    devices = await sesssion.execute(query)
+    if devices.first() is not None:
+        raise HTTPException(
+            status_code=400, 
+            detail="Помещение в котором есть оборудование не может быть удалено")
     if room:
         await sesssion.delete(room)
         await sesssion.commit()
