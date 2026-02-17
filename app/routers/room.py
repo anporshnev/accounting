@@ -4,7 +4,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 
 from app.schemas.room import RoomFromDB, RoomCreate
+from app.schemas.device import DeviceFromDB
 from app.models.room import Room
+from app.models.device import Device
 from app.database import get_session
 
 room_router: APIRouter = APIRouter(
@@ -16,6 +18,13 @@ room_router: APIRouter = APIRouter(
 async def get_rooms(sesssion: AsyncSession = Depends(get_session)):
     result = await sesssion.execute(select(Room))
     return result.scalars().all()
+
+@room_router.get("/{room_id}/devices", response_model=list[DeviceFromDB])
+async def get_room_devices(room_id: int, sesssion: AsyncSession = Depends(get_session)):
+    query = select(Device).filter(Device.room_id == room_id)
+    result = await sesssion.execute(query)
+    devices = result.scalars().all()
+    return devices
 
 @room_router.post("/")
 async def add_room(room: RoomCreate, sesssion: AsyncSession = Depends(get_session)):
@@ -34,7 +43,6 @@ async def update_room(room_id: int, room: RoomCreate, sesssion: AsyncSession = D
         if record:
             record.title = room.title
             await sesssion.commit()
-        return None
     except SQLAlchemyError:
         await sesssion.rollback()
         raise
