@@ -25,16 +25,25 @@ async def get_device_by_id(device_id: UUID, sesssion: AsyncSession = Depends(get
     return device
 
 @device_router.post("/")
-async def add_device(group: DeviceCreate, sesssion: AsyncSession = Depends(get_session)):
-    new_group = Device(**group.model_dump())
-    sesssion.add(new_group)
+async def add_device(device: DeviceCreate, sesssion: AsyncSession = Depends(get_session)):
+    device_dict = device.model_dump()
+    new_device = Device(**device_dict)
+    sesssion.add(new_device)
     try:
-        await sesssion.commit()
+        await sesssion.flush()
+        response = DeviceFromDB(
+            id=new_device.id,
+            created_at=new_device.created_at,
+            updated_at=new_device.updated_at,
+            **device_dict
+        )
+        await sesssion.commit() 
     except SQLAlchemyError as e:
         await sesssion.rollback()
         raise AddingException(e)
-    
-@device_router.put("/{device_id}")
+    return response
+ 
+@device_router.put("/{device_id}", response_model=DeviceCreate)
 async def update_device(device_id: UUID, group: DeviceCreate, sesssion: AsyncSession = Depends(get_session)):
     new_data = group.model_dump()
     record = await sesssion.get(Device, device_id)
@@ -42,10 +51,11 @@ async def update_device(device_id: UUID, group: DeviceCreate, sesssion: AsyncSes
         for key, value in new_data.items():
                 setattr(record, key, value)
     try:
-        await sesssion.commit()
+        await sesssion.commit()    
     except SQLAlchemyError as e:
         await sesssion.rollback()
         raise UpdateException(e)
+    return new_data
     
 @device_router.delete("/{device_id}")
 async def delete_group(device_id: UUID, sesssion: AsyncSession = Depends(get_session)):

@@ -27,28 +27,32 @@ async def get_room_devices(room_id: int, sesssion: AsyncSession = Depends(get_se
     devices = result.scalars().all()
     return devices
 
-@room_router.post("/")
+@room_router.post("/", response_model=RoomFromDB)
 async def add_room(room: RoomCreate, sesssion: AsyncSession = Depends(get_session)):
-    new_room = Room(**room.model_dump())
+    room_dict = room.model_dump()
+    new_room = Room(**room_dict)
     sesssion.add(new_room)
     try:
+        await sesssion.flush()
+        response = RoomFromDB(id=new_room.id,**room_dict)
         await sesssion.commit()
     except SQLAlchemyError as e:
         await sesssion.rollback()
         raise AddingException(e)
+    return response
     
 @room_router.put("/{room_id}")
 async def update_room(room_id: int, room: RoomCreate, sesssion: AsyncSession = Depends(get_session)):
     record = await sesssion.get(Room, room_id)
+    if record:
+        record.title = room.title
     try:
-        if record:
-            record.title = room.title
-            await sesssion.commit()
+        await sesssion.commit()
     except SQLAlchemyError as e:
         await sesssion.rollback()
         raise UpdateException(e)
+    return room
     
-
 @room_router.delete("/{room_id}")
 async def delete_room(room_id: int, sesssion: AsyncSession = Depends(get_session)):
     room = await sesssion.get(Room, room_id)

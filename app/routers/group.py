@@ -18,15 +18,19 @@ async def get_groups(sesssion: AsyncSession = Depends(get_session)):
     result = await sesssion.execute(select(Group))
     return result.scalars().all()
 
-@group_router.post("/")
+@group_router.post("/", response_model=GroupFromDB)
 async def add_group(group: GroupCreate, sesssion: AsyncSession = Depends(get_session)):
-    new_group = Group(**group.model_dump())
+    group_dict = group.model_dump()
+    new_group = Group(**group_dict)
     sesssion.add(new_group)
     try:
+        await sesssion.flush()
+        response = GroupFromDB(id=new_group.id,**group_dict)
         await sesssion.commit()
     except SQLAlchemyError as e:
         await sesssion.rollback()
         raise AddingException(e)
+    return response
     
 @group_router.put("/{group_id}")
 async def update_group(group_id: int, group: GroupCreate, sesssion: AsyncSession = Depends(get_session)):
@@ -38,8 +42,8 @@ async def update_group(group_id: int, group: GroupCreate, sesssion: AsyncSession
     except SQLAlchemyError as e:
         await sesssion.rollback()
         raise UpdateException(e)
+    return group
     
-
 @group_router.delete("/{group_id}")
 async def delete_group(group_id: int, sesssion: AsyncSession = Depends(get_session)):
     room = await sesssion.get(Group, group_id)
