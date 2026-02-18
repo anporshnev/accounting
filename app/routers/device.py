@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
@@ -8,6 +8,7 @@ from app.schemas.device import DeviceFromDB, DeviceCreate
 from app.models.device import Device
 from app.database import get_session
 from app.errors import AddingException, UpdateException
+from app.utils import get_hash
 
 device_router: APIRouter = APIRouter(
     prefix="/devices",
@@ -26,8 +27,22 @@ async def get_device_by_id(device_id: UUID, sesssion: AsyncSession = Depends(get
 
 @device_router.post("/")
 async def add_device(device: DeviceCreate, sesssion: AsyncSession = Depends(get_session)):
+    new_device_hash = get_hash(
+        device.title, 
+        device.model, 
+        device.inventory_number, 
+        device.serial_number
+        )
+    
+    query = select(Device).filter(Device.hash == new_device_hash)
+    devices = await sesssion.execute(query)
+    if devices.first() is not None:
+        raise HTTPException(
+            status_code=400, 
+            detail="Такое устройство уже существует")
+    
     device_dict = device.model_dump()
-    new_device = Device(**device_dict)
+    new_device = Device(hash=new_device_hash, **device_dict)
     sesssion.add(new_device)
     try:
         await sesssion.flush()
