@@ -8,6 +8,7 @@ from app.schemas.device import DeviceFromDB
 from app.models.room import Room
 from app.models.device import Device
 from app.database import get_session
+from app.errors import AddingException, UpdateException
 
 room_router: APIRouter = APIRouter(
     prefix="/rooms",
@@ -32,9 +33,9 @@ async def add_room(room: RoomCreate, sesssion: AsyncSession = Depends(get_sessio
     sesssion.add(new_room)
     try:
         await sesssion.commit()
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         await sesssion.rollback()
-        raise 
+        raise AddingException(e)
     
 @room_router.put("/{room_id}")
 async def update_room(room_id: int, room: RoomCreate, sesssion: AsyncSession = Depends(get_session)):
@@ -43,9 +44,9 @@ async def update_room(room_id: int, room: RoomCreate, sesssion: AsyncSession = D
         if record:
             record.title = room.title
             await sesssion.commit()
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         await sesssion.rollback()
-        raise
+        raise UpdateException(e)
     
 
 @room_router.delete("/{room_id}")

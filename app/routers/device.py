@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.schemas.device import DeviceFromDB, DeviceCreate
 from app.models.device import Device
 from app.database import get_session
+from app.errors import AddingException, UpdateException
 
 device_router: APIRouter = APIRouter(
     prefix="/devices",
@@ -29,24 +30,22 @@ async def add_device(group: DeviceCreate, sesssion: AsyncSession = Depends(get_s
     sesssion.add(new_group)
     try:
         await sesssion.commit()
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         await sesssion.rollback()
-        raise
+        raise AddingException(e)
     
 @device_router.put("/{device_id}")
 async def update_device(device_id: UUID, group: DeviceCreate, sesssion: AsyncSession = Depends(get_session)):
     new_data = group.model_dump()
-    try:
-        record = await sesssion.get(Device, device_id)
-        if record:
-            for key, value in new_data.items():
+    record = await sesssion.get(Device, device_id)
+    if record:
+        for key, value in new_data.items():
                 setattr(record, key, value)
-                
-            
-            await sesssion.commit()
-    except SQLAlchemyError:
+    try:
+        await sesssion.commit()
+    except SQLAlchemyError as e:
         await sesssion.rollback()
-        raise
+        raise UpdateException(e)
     
 @device_router.delete("/{device_id}")
 async def delete_group(device_id: UUID, sesssion: AsyncSession = Depends(get_session)):

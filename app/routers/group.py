@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.schemas.group import GroupFromDB, GroupCreate
 from app.models.group import Group
 from app.database import get_session
+from app.errors import AddingException, UpdateException
 
 group_router: APIRouter = APIRouter(
     prefix="/groups",
@@ -23,21 +24,20 @@ async def add_group(group: GroupCreate, sesssion: AsyncSession = Depends(get_ses
     sesssion.add(new_group)
     try:
         await sesssion.commit()
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
         await sesssion.rollback()
-        raise 
+        raise AddingException(e)
     
 @group_router.put("/{group_id}")
 async def update_group(group_id: int, group: GroupCreate, sesssion: AsyncSession = Depends(get_session)):
     record = await sesssion.get(Group, group_id)
+    if record:
+        record.title = group.title   
     try:
-        if record:
-            record.title = group.title
-            await sesssion.commit()
-        return None
-    except SQLAlchemyError:
+        await sesssion.commit()
+    except SQLAlchemyError as e:
         await sesssion.rollback()
-        raise
+        raise UpdateException(e)
     
 
 @group_router.delete("/{group_id}")
