@@ -20,3 +20,4 @@ class Device(Base, UUIDMixin, ModifiedTimeMixin):
     group: Mapped["Group"] = relationship(back_populates="devices")
     properties: Mapped[dict | None] = mapped_column(JSON)
     notes: Mapped[str | None] = mapped_column(Text)
+    hash: Mapped[str]
